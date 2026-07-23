@@ -6,13 +6,13 @@ out what's needed and roughly how.
 
 ## Endpoints to implement
 
-| Method | Path                    | Description                              |
-|--------|---------------------------|---------------------------------------------|
-| POST   | `/shorten`                 | Create a shortened link                     |
-| GET    | `/{short_code}`            | Redirect to the target URL                   |
-| GET    | `/stats/{short_code}`      | Stats (click count)                          |
-| GET    | `/health`                  | Health check (for load balancer/k8s)         |
-| GET    | `/metrics`                 | Prometheus metrics (bonus, add later)        |
+| Method | Path                       | Description                                |
+|--------|----------------------------|--------------------------------------------|
+| POST   | `/shorten`                 | Create a shortened link                    |
+| GET    | `/{short_code}`            | Redirect to the target URL                 |
+| GET    | `/stats/{short_code}`      | Stats (click count)                        |
+| GET    | `/health`                  | Health check (for load balancer/k8s)       |
+| GET    | `/metrics`                 | Prometheus metrics (bonus, add later)      |
 
 ## Checklist
 
@@ -43,5 +43,7 @@ url-shortener/
 ├── .github/workflows/ci.yml
 ├── Dockerfile
 ├── docker-compose.yml
-└── requirements.txt
+├── .python-version
+├── pyproject.toml
+└── uv.lock
 ```
