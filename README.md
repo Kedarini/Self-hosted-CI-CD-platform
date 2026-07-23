@@ -1,7 +1,7 @@
-# URL Shortener API — project skeleton
+# URL Shortener API project skeleton
 
 Base for a DevOps project: Docker → CI/CD → Terraform/AWS → monitoring.
-Logic is left for you to implement — files contain TODO comments pointing
+Logic is left for you to implement files contain TODO comments pointing
 out what's needed and roughly how.
 
 ## Endpoints to implement
@@ -16,11 +16,11 @@ out what's needed and roughly how.
 
 ## Checklist
 
-- [ ] `app/database.py` — Postgres connection via SQLAlchemy
-- [ ] `app/models.py` — `URL` model
-- [ ] `app/schemas.py` — Pydantic schemas
-- [ ] `app/main.py` — endpoints
-- [ ] `tests/test_main.py` — pytest tests
+- [ ] `app/database.py` - Postgres connection via SQLAlchemy
+- [ ] `app/models.py` - `URL` model
+- [ ] `app/schemas.py` - Pydantic schemas
+- [ ] `app/main.py` - endpoints
+- [ ] `tests/test_main.py` - pytest tests
 - [ ] `Dockerfile`
 - [ ] `docker-compose.yml`
 - [ ] `.github/workflows/ci.yml`
@@ -45,8 +45,3 @@ url-shortener/
 ├── docker-compose.yml
 └── requirements.txt
 ```
-# Self-hosted-CI-CD-platform
-# Self-hosted-CI-CD-platform
-# Self-hosted-CI-CD-platform
-# Self-hosted-CI-CD-platform
-# Self-hosted-CI-CD-platform
