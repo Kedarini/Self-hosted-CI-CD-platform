@@ -21,8 +21,8 @@ out what's needed and roughly how.
 - [ ] `app/schemas.py` - Pydantic schemas
 - [ ] `app/main.py` - endpoints
 - [ ] `tests/test_main.py` - pytest tests
-- [ ] `Dockerfile`
-- [ ] `docker-compose.yml`
+- [x] `Dockerfile`
+- [x] `docker-compose.yml`
 - [ ] `.github/workflows/ci.yml`
 - [ ] Terraform: VPC, EC2/ECS, RDS (separate step, once the app works locally)
 - [ ] CD: deploy from Actions on merge to `main`
