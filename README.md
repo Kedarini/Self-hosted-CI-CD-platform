@@ -19,7 +19,7 @@ out what's needed and roughly how.
 - [x] `app/database.py` - Postgres connection via SQLAlchemy
 - [x] `app/models.py` - `URL` model
 - [x] `app/schemas.py` - Pydantic schemas
-- [ ] `app/main.py` - endpoints
+- [x] `app/main.py` - endpoints
 - [ ] `tests/test_main.py` - pytest tests
 - [x] `Dockerfile`
 - [x] `docker-compose.yml`
