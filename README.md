@@ -17,7 +17,7 @@ out what's needed and roughly how.
 ## Checklist
 
 - [x] `app/database.py` - Postgres connection via SQLAlchemy
-- [ ] `app/models.py` - `URL` model
+- [x] `app/models.py` - `URL` model
 - [ ] `app/schemas.py` - Pydantic schemas
 - [ ] `app/main.py` - endpoints
 - [ ] `tests/test_main.py` - pytest tests
