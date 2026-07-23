@@ -1,13 +1,3 @@
-# TODO: docker-compose.yml for local development
-#
-# Two services:
-# - db: postgres:16-alpine, with POSTGRES_USER/PASSWORD/DB env vars, healthcheck (pg_isready)
-# - app: build from the local Dockerfile, depends_on db (ideally with the
-#        service_healthy condition), DATABASE_URL env var pointing at the db
-#        container (not localhost!), port 8000 exposed
-#
-# Remember a named volume for Postgres data so you don't lose the DB on restart.
-
 services:
   db:
     image: 'postgres:16-alpine'
