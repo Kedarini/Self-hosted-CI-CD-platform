@@ -16,7 +16,7 @@ out what's needed and roughly how.
 
 ## Checklist
 
-- [ ✓ ] `app/database.py` - Postgres connection via SQLAlchemy
+- [x] `app/database.py` - Postgres connection via SQLAlchemy
 - [ ] `app/models.py` - `URL` model
 - [ ] `app/schemas.py` - Pydantic schemas
 - [ ] `app/main.py` - endpoints
