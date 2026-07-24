@@ -20,7 +20,7 @@ out what's needed and roughly how.
 - [x] `app/models.py` - `URL` model
 - [x] `app/schemas.py` - Pydantic schemas
 - [x] `app/main.py` - endpoints
-- [ ] `tests/test_main.py` - pytest tests
+- [x] `tests/test_main.py` - pytest tests
 - [x] `Dockerfile`
 - [x] `docker-compose.yml`
 - [ ] `.github/workflows/ci.yml`
