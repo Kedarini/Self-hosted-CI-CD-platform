@@ -1,12 +1,14 @@
-from fastapi.responses import RedirectResponse
-from fastapi import FastAPI, Depends, HTTPException
-from sqlalchemy.orm import Session
-from sqlalchemy import text
-from app.database import get_db, engine, Base
-from app import models
-import app.schemas as schemas
 import random
 import string
+
+from fastapi import Depends, FastAPI, HTTPException
+from fastapi.responses import RedirectResponse
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
+
+from app import models, schemas
+from app.database import Base, engine, get_db
 
 app = FastAPI(title="URL Shortener")
 
@@ -39,7 +41,7 @@ def health_check(db: Session = Depends(get_db)):
     try:
         db.execute(text("SELECT 1"))
         return {"status": "ok"}
-    except Exception:
+    except SQLAlchemyError:
         raise HTTPException(status_code=503, detail="database unavailable")
 
 

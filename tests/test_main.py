@@ -10,13 +10,14 @@
 # Hint: use a separate DB for tests (e.g. in-memory SQLite) via
 # app.dependency_overrides[get_db], so you're not testing against the production Postgres.
 
+import pytest
+from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
-from app.main import app
+
 from app.database import Base, get_db
-from fastapi.testclient import TestClient
-import pytest
+from app.main import app
 
 TEST_DATABASE_URL = "sqlite:///:memory:"
 engine = create_engine(
