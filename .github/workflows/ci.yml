@@ -1,0 +1,65 @@
+# TODO: GitHub Actions workflow
+#
+# Trigger: push and pull_request on main
+#
+# Job 1 (lint-and-test):
+#   - checkout
+#   - setup-python
+#   - pip install -r requirements-dev.txt
+#   - ruff check (lint)
+#   - pytest
+#
+# Job 2 (build-image), depends on job 1:
+#   - docker/setup-buildx-action
+#   - docker/build-push-action (push: false for now, build only)
+#
+# Later add: push the image to ECR/Docker Hub + a terraform apply step
+
+name: CI
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
+
+jobs:
+    lint-and-test:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Install uv
+              uses: astral-sh/setup-uv@v3
+
+            - name: Set up Python
+              uses: actions/setup-python@v5
+              with:
+                python-version: "3.14"
+
+            - name: Install dependencies
+              run: uv sync
+
+            - name: Lint with ruff
+              run: uv run ruff check app tests
+
+            - name: Run tests
+              env:
+                DATABASE_URL: postgresql://placeholder:placeholder@localhost:5432/placeholder
+              run: uv run pytest -v
+
+    build-image:
+        needs: lint-and-test
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Set up Docker Buildx
+              uses: docker/setup-buildx-action@v3
+            
+            - name: Build image
+              uses: docker/build-push-action@v6
+              with:
+                context: .
+                push: false
+                tags: url-shortener:latest
