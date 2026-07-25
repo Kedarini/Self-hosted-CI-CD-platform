@@ -42,6 +42,29 @@ def test_shorten_url():
     assert data["clicks"] == 0
 
 
+def test_redirect_and_click_count():
+    create_resp = client.post("/shorten", json={"target_url": "https://example.com"})
+    code = create_resp.json()["short_code"]
+
+    redirect_resp = client.get(f"/{code}", follow_redirects=False)
+    assert redirect_resp.status_code == 307
+
+    stats_resp = client.get(f"/stats/{code}")
+    assert stats_resp.json()["clicks"] == 1
+
+
+def test_unknown_code_return_404():
+    check_url = client.get(
+        "/doesnotexist",
+    )
+    assert check_url.status_code == 404
+
+
+def test_invalid_url_rejeceted():
+    check_url = client.post("/shorten", json={"target_url": "not-a-url"})
+    assert check_url.status_code == 422
+
+
 def override_get_db():
     db = TestingSessionLocal()
     try:
