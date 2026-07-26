@@ -24,7 +24,7 @@ out what's needed and roughly how.
 - [x] `Dockerfile`
 - [x] `docker-compose.yml`
 - [x] `.github/workflows/ci.yml`
-- [ ] Terraform: VPC, EC2/ECS, RDS (separate step, once the app works locally)
+- [x] Terraform: VPC, EC2/ECS, RDS (separate step, once the app works locally)
 - [ ] CD: deploy from Actions on merge to `main`
 - [ ] Monitoring: Prometheus + Grafana
 
