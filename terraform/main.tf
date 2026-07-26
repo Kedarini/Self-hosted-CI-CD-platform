@@ -142,6 +142,18 @@ resource "aws_instance" "app" {
   vpc_security_group_ids = [aws_security_group.app.id]
   key_name               = aws_key_pair.deployer.key_name
 
+  user_data = <<-EOF
+    #!/bin/bash
+    curl -fsSL https://get.docker.com -o get-docker.sh
+    sh get-docker.sh
+    usermod -aG docker ubuntu
+    su - ubuntu -c "git clone https://github.com/Kedarini/Self-hosted-CI-CD-platform.git"
+    echo "DATABASE_URL=postgresql://postgres:${var.db_password}@${aws_db_instance.main.endpoint}/urlshortener?sslmode=require" > /home/ubuntu/Self-hosted-CI-CD-platform/.env
+    chown ubuntu:ubuntu /home/ubuntu/Self-hosted-CI-CD-platform/.env
+    cd /home/ubuntu/Self-hosted-CI-CD-platform
+    su - ubuntu -c "cd Self-hosted-CI-CD-platform && docker compose -f docker-compose.prod.yml up --build -d"
+  EOF
+
   tags = {
     Name = "url-shortener-app"
   }
@@ -183,4 +195,13 @@ resource "aws_db_instance" "main" {
     tags = {
         Name = "url-shortener-db"
     }
+}
+
+resource "aws_eip" "app" {
+  instance = aws_instance.app.id
+  domain   = "vpc"
+
+  tags = {
+    Name = "url-shortener-eip"
+  }
 }
