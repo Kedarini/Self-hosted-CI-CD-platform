@@ -18,66 +18,66 @@
 name: CI
 
 on:
-    push:
-        branches: [main]
-    pull_request:
-        branches: [main]
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
 
 jobs:
-    lint-and-test:
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v7
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
 
-            - name: Install uv
-              uses: astral-sh/setup-uv@v7
-              with:
-                enable-cache: true
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
 
-            - name: Set up Python
-              uses: actions/setup-python@v7
-              with:
-                python-version: "3.14"
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
 
-            - name: Install dependencies
-              run: uv sync
+      - name: Install dependencies
+        run: uv sync
 
-            - name: Lint with ruff
-              run: uv run ruff check app tests
+      - name: Lint with ruff
+        run: uv run ruff check app tests
 
-            - name: Run tests
-              env:
-                DATABASE_URL: postgresql://placeholder:placeholder@localhost:5432/placeholder
-              run: uv run pytest -v
+      - name: Run tests
+        env:
+          DATABASE_URL: postgresql://placeholder:placeholder@localhost:5432/placeholder
+        run: uv run pytest -v
 
-    build-image:
-        needs: lint-and-test
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v7
+  build-image:
+    needs: lint-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
 
-            - name: Set up Docker Buildx
-              uses: docker/setup-buildx-action@v4
-            
-            - name: Build image
-              uses: docker/build-push-action@v6
-              with:
-                context: .
-                push: false
-                tags: url-shortener:latest
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
 
-    deploy: 
-      needs: build-image
-      runs-on: ubuntu-latest
-      if: github.ref == 'refs/heads/main'
-      steps:
-        - name: Deploy to EC2
-          uses: appleboy/ssh-action@v1
-          with:
-            host: ${{ secrets.EC2_HOST }}
-            username: ubuntu
-            key: ${{ secrets.EC2_SSH_KEY }}
-            script: |
-              cd Self-hosted-CI-CD-platform
-              git pull
-              docker compose -f docker-compose.prod.yml up --build -d
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          tags: url-shortener:latest
+
+  deploy:
+    needs: build-image
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd Self-hosted-CI-CD-platform
+            git pull
+            docker compose -f docker-compose.prod.yml up --build -d
