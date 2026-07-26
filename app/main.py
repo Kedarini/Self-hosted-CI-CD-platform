@@ -3,6 +3,7 @@ import string
 
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.responses import RedirectResponse
+from prometheus_fastapi_instrumentator import Instrumentator
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
@@ -11,6 +12,8 @@ from app import models, schemas
 from app.database import Base, engine, get_db
 
 app = FastAPI(title="URL Shortener")
+
+Instrumentator().instrument(app).expose(app)
 
 
 def generate_short_code(length: int = 6) -> str:
