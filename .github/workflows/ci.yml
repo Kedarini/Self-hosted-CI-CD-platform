@@ -65,3 +65,19 @@ jobs:
                 context: .
                 push: false
                 tags: url-shortener:latest
+
+    deploy: 
+      needs: build-image
+      runs-on: ubuntu-latest
+      if: github.ref == 'refs/heads/main'
+      steps:
+        - name: Deploy to EC2
+          uses: appleboy/ssh-action@v1
+          with:
+            host: ${{ secrets.EC2_HOST }}
+            username: ubuntu
+            key: ${{ secrets.EC2_SSH_KEY }}
+            script: |
+              cd Self-hosted-CI-CD-platform
+              git pull
+              docker compose -f docker-compose.prod.yml up --build -d
