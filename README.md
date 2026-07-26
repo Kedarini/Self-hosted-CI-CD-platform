@@ -26,7 +26,7 @@ out what's needed and roughly how.
 - [x] `.github/workflows/ci.yml`
 - [x] Terraform: VPC, EC2/ECS, RDS (separate step, once the app works locally)
 - [x] CD: deploy from Actions on merge to `main`
-- [ ] Monitoring: Prometheus + Grafana
+- [x] Monitoring: Prometheus + Grafana
 
 ## Structure
 
