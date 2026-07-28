@@ -152,8 +152,9 @@ resource "aws_instance" "app" {
   user_data = <<-EOF
     #!/bin/bash
     apt-get update -y
-    apt-get install -y curl git netcat-openbsd
-    curl -fsSL https://get.docker.com | sh
+    apt-get install -y docker.io docker-compose-v2 awscli
+    systemctl start docker
+    systemctl enable docker
     usermod -aG docker ubuntu
 
     REPO_DIR="/home/ubuntu/Self-hosted-CI-CD-platform"
