@@ -11,12 +11,15 @@ provider "aws" {
   region = "eu-central-1"
 }
 
+# ------------------------------------------------------------------------------
+# VPC & NETWORK
+# ------------------------------------------------------------------------------
 resource "aws_vpc" "main" {
-  cidr_block = "10.0.0.0/16"
+  cidr_block           = "10.0.0.0/16"
+  enable_dns_hostnames = true
+  enable_dns_support   = true
 
-  tags = {
-    Name = "url-shortener-vpc"
-  }
+  tags = { Name = "url-shortener-vpc" }
 }
 
 resource "aws_subnet" "public" {
@@ -25,9 +28,7 @@ resource "aws_subnet" "public" {
   availability_zone       = "eu-central-1a"
   map_public_ip_on_launch = true
 
-  tags = {
-    Name = "url-shortener-public-subnet"
-  }
+  tags = { Name = "url-shortener-public-subnet-1" }
 }
 
 resource "aws_subnet" "public_2" {
@@ -36,17 +37,13 @@ resource "aws_subnet" "public_2" {
   availability_zone       = "eu-central-1b"
   map_public_ip_on_launch = true
 
-  tags = {
-    Name = "url-shortener-public-subnet"
-  }
+  tags = { Name = "url-shortener-public-subnet-2" }
 }
 
 resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
 
-  tags = {
-    Name = "url-shortener-igw"
-  }
+  tags = { Name = "url-shortener-igw" }
 }
 
 resource "aws_route_table" "public" {
@@ -57,9 +54,7 @@ resource "aws_route_table" "public" {
     gateway_id = aws_internet_gateway.main.id
   }
 
-  tags = {
-    Name = "url-shortener-public-rt"
-  }
+  tags = { Name = "url-shortener-public-rt" }
 }
 
 resource "aws_route_table_association" "public" {
@@ -72,6 +67,9 @@ resource "aws_route_table_association" "public_2" {
   route_table_id = aws_route_table.public.id
 }
 
+# ------------------------------------------------------------------------------
+# SECURITY GROUPS
+# ------------------------------------------------------------------------------
 resource "aws_security_group" "app" {
   name        = "url-shortener-app-sg"
   description = "Security group for the app EC2 instance"
@@ -100,9 +98,7 @@ resource "aws_security_group" "app" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = {
-    Name = "url-shortener-app-sg"
-  }
+  tags = { Name = "url-shortener-app-sg" }
 }
 
 resource "aws_security_group" "db" {
@@ -125,38 +121,15 @@ resource "aws_security_group" "db" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = {
-    Name = "url-shortener-db-sg"
-  }
+  tags = { Name = "url-shortener-db-sg" }
 }
 
+# ------------------------------------------------------------------------------
+# EC2 INSTANCE & EIP
+# ------------------------------------------------------------------------------
 resource "aws_key_pair" "deployer" {
   key_name   = "url-shortener-key"
   public_key = file("~/.ssh/id_ed25519.pub")
-}
-
-resource "aws_instance" "app" {
-  ami                    = data.aws_ami.ubuntu.id
-  instance_type          = "t3.micro"
-  subnet_id              = aws_subnet.public.id
-  vpc_security_group_ids = [aws_security_group.app.id]
-  key_name               = aws_key_pair.deployer.key_name
-
-  user_data = <<-EOF
-    #!/bin/bash
-    curl -fsSL https://get.docker.com -o get-docker.sh
-    sh get-docker.sh
-    usermod -aG docker ubuntu
-    su - ubuntu -c "git clone https://github.com/Kedarini/Self-hosted-CI-CD-platform.git"
-    echo "DATABASE_URL=postgresql://postgres:${var.db_password}@${aws_db_instance.main.endpoint}/urlshortener?sslmode=require" > /home/ubuntu/Self-hosted-CI-CD-platform/.env
-    chown ubuntu:ubuntu /home/ubuntu/Self-hosted-CI-CD-platform/.env
-    cd /home/ubuntu/Self-hosted-CI-CD-platform
-    su - ubuntu -c "cd Self-hosted-CI-CD-platform && docker compose -f docker-compose.prod.yml up --build -d"
-  EOF
-
-  tags = {
-    Name = "url-shortener-app"
-  }
 }
 
 data "aws_ami" "ubuntu" {
@@ -169,6 +142,58 @@ data "aws_ami" "ubuntu" {
   }
 }
 
+resource "aws_instance" "app" {
+  ami                    = data.aws_ami.ubuntu.id
+  instance_type          = "t3.micro"
+  subnet_id              = aws_subnet.public.id
+  vpc_security_group_ids = [aws_security_group.app.id]
+  key_name               = aws_key_pair.deployer.key_name
+
+  user_data = <<-EOF
+    #!/bin/bash
+    apt-get update -y
+    apt-get install -y curl git netcat-openbsd
+    curl -fsSL https://get.docker.com | sh
+    usermod -aG docker ubuntu
+
+    REPO_DIR="/home/ubuntu/Self-hosted-CI-CD-platform"
+    git clone https://github.com/Kedarini/Self-hosted-CI-CD-platform.git $REPO_DIR
+
+    cat <<EOT > $REPO_DIR/.env
+DATABASE_URL=postgresql://postgres:${var.db_password}@${aws_db_instance.main.address}:5432/urlshortener?sslmode=require
+GRAFANA_PASS=${var.db_password}
+EOT
+
+    chown -R ubuntu:ubuntu $REPO_DIR
+
+    echo "Waiting for launch of RDS..."
+    until nc -z -v -w5 ${aws_db_instance.main.address} 5432; do
+      echo "Database is not responding, waiting 10 seconds..."
+      sleep 10
+    done
+    echo "Database is ready!"
+
+    cd $REPO_DIR
+    su - ubuntu -c "cd $REPO_DIR && docker compose -f docker-compose.prod.yml up --build -d"
+  EOF
+
+  tags = { Name = "url-shortener-app" }
+}
+
+resource "aws_eip" "app" {
+  domain = "vpc"
+
+  tags = { Name = "url-shortener-eip" }
+}
+
+resource "aws_eip_association" "app_eip_assoc" {
+  instance_id   = aws_instance.app.id
+  allocation_id = aws_eip.app.id
+}
+
+# ------------------------------------------------------------------------------
+# RDS POSTGRES
+# ------------------------------------------------------------------------------
 resource "aws_db_subnet_group" "main" {
   name       = "url-shortener-db-subnet-group"
   subnet_ids = [aws_subnet.public.id, aws_subnet.public_2.id]
@@ -192,20 +217,5 @@ resource "aws_db_instance" "main" {
   skip_final_snapshot    = true
   publicly_accessible    = false
 
-  tags = {
-    Name = "url-shortener-db"
-  }
-}
-
-resource "aws_eip" "app" {
-  domain = "vpc"
-
-  tags = {
-    Name = "url-shortener-eip"
-  }
-}
-
-resource "aws_eip_association" "app_eip_assoc" {
-  instance_id   = aws_instance.app.id
-  allocation_id = aws_eip.app.id
+  tags = { Name = "url-shortener-db" }
 }
