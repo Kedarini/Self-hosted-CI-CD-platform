@@ -87,23 +87,13 @@ jobs:
             TARGET_DIR="/home/ubuntu/Self-hosted-CI-CD-platform"
 
             if [ ! -d "$TARGET_DIR/.git" ]; then
-              if [ -f "$TARGET_DIR/.env" ]; then
-                cp "$TARGET_DIR/.env" /tmp/.env.backup
-              fi
-
-              rm -rf "$TARGET_DIR"
               git clone https://github.com/Kedarini/Self-hosted-CI-CD-platform.git "$TARGET_DIR"
-
-              if [ -f /tmp/.env.backup ]; then
-                mv /tmp/.env.backup "$TARGET_DIR/.env"
-              fi
             fi
 
             cd "$TARGET_DIR"
+
             git fetch origin main
             git reset --hard origin/main
-
-            echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > .env
 
             if ! grep -q "ECR_REGISTRY_URL=" .env 2>/dev/null; then
               echo "ECR_REGISTRY_URL=${{ secrets.ECR_REPOSITORY_URL }}" >> .env
