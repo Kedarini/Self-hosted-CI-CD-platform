@@ -84,6 +84,9 @@ jobs:
           script: |
             set -e
 
+            echo "Waiting for installation of packages from EC2..."
+            sudo cloud-init status --wait
+
             if [ ! -d "/home/ubuntu/Self-hosted-CI-CD-platform" ]; then
               git clone https://github.com/Kedarini/Self-hosted-CI-CD-platform.git /home/ubuntu/Self-hosted-CI-CD-platform
             fi
