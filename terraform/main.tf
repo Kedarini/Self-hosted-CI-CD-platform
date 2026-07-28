@@ -162,6 +162,7 @@ resource "aws_instance" "app" {
     cat <<EOT > $REPO_DIR/.env
 DATABASE_URL=postgresql://postgres:${var.db_password}@${aws_db_instance.main.address}:5432/urlshortener?sslmode=require
 GRAFANA_PASS=${var.db_password}
+ECR_REGISTRY_URL=${aws_ecr_repository.app.repository_url}
 EOT
 
     chown -R ubuntu:ubuntu $REPO_DIR
@@ -218,4 +219,40 @@ resource "aws_db_instance" "main" {
   publicly_accessible    = false
 
   tags = { Name = "url-shortener-db" }
+}
+
+# ------------------------------------------------------------------------------
+# ECR REPOSITORY
+# ------------------------------------------------------------------------------
+resource "aws_ecr_repository" "app" {
+  name                 = "url-shortener"
+  image_tag_mutability = "MUTABLE"
+
+  image_scanning_configuration {
+    scan_on_push = false
+  }
+
+  tags = { Name = "url-shortener-ecr" }
+}
+
+resource "aws_ecr_lifecycle_policy" "app_policy" {
+  repository = aws_ecr_repository.app.name
+
+  policy = jsonencode({
+    rules = [
+      {
+        rulePriority = 1
+        description  = "Store only 3 latest images"
+        selection = {
+          tagStatus   = "any"
+          countType   = "sinceImagePushed"
+          countUnit   = "days"
+          countNumber = 14
+        }
+        action = {
+          type = "expire"
+        }
+      }
+    ]
+  })
 }
