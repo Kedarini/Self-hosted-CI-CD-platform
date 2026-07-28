@@ -86,9 +86,7 @@ jobs:
 
             TARGET_DIR="/home/ubuntu/Self-hosted-CI-CD-platform"
 
-            # Check if .git exists, if not initialize or clone safely
             if [ ! -d "$TARGET_DIR/.git" ]; then
-              # Preserve existing .env file created by Terraform
               if [ -f "$TARGET_DIR/.env" ]; then
                 cp "$TARGET_DIR/.env" /tmp/.env.backup
               fi
@@ -105,8 +103,13 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
 
-            # Log in to ECR and pull/run containers
-            aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin ${{ secrets.ECR_REPOSITORY_URL }}
+            if ! grep -q "ECR_REGISTRY_URL=" .env 2>/dev/null; then
+              echo "ECR_REGISTRY_URL=${{ secrets.ECR_REPOSITORY_URL }}" >> .env
+            fi
+
+            export ECR_REGISTRY_URL="${{ secrets.ECR_REPOSITORY_URL }}"
+
+            aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin "${{ secrets.ECR_REPOSITORY_URL }}"
 
             docker compose -f docker-compose.prod.yml pull app
             docker compose -f docker-compose.prod.yml up -d --remove-orphans
