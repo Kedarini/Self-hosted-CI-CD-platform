@@ -103,6 +103,8 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
 
+            echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > .env
+
             if ! grep -q "ECR_REGISTRY_URL=" .env 2>/dev/null; then
               echo "ECR_REGISTRY_URL=${{ secrets.ECR_REPOSITORY_URL }}" >> .env
             fi
