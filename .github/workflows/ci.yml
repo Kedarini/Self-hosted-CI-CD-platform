@@ -84,13 +84,6 @@ jobs:
           script: |
             set -euo pipefail
 
-            echo "Waiting for installation of Docker to end..."
-            until command -v docker >/dev/null 2>&1; do
-              echo "Docker is still installing... waiting 5 seconds"
-              sleep 5
-            done
-            echo "Docker is ready!"
-
             if [ ! -d "/home/ubuntu/Self-hosted-CI-CD-platform" ]; then
               git clone https://github.com/Kedarini/Self-hosted-CI-CD-platform.git /home/ubuntu/Self-hosted-CI-CD-platform
             fi
