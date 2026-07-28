@@ -12,3 +12,7 @@ output "ec2_ssh_command" {
   description = "SSH connection command"
   value       = "ssh -i ~/.ssh/id_ed25519 ubuntu@${aws_eip.app.public_ip}"
 }
+
+output "ecr_repository_url" {
+  value = aws_ecr_repository.app.repository_url
+}
