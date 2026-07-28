@@ -1,8 +1,29 @@
 services:
   app:
-    build: .
+    image: ${ECR_REGISTRY_URL}/url-shortener:latest
     restart: unless-stopped
     ports:
       - "8000:8000"
     environment:
       DATABASE_URL: ${DATABASE_URL}
+
+  prometheus:
+    image: prom/prometheus:latest
+    restart: unless-stopped
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+
+  grafana:
+    image: grafana/grafana:latest
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASS:-admin_secret_password}
+    volumes:
+      - grafana_data:/var/lib/grafana
+
+volumes:
+  prometheus_data:
+  grafana_data:
