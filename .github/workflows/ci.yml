@@ -84,16 +84,28 @@ jobs:
           script: |
             set -euo pipefail
 
-            if [ ! -d "/home/ubuntu/Self-hosted-CI-CD-platform/.git" ]; then
-              git clone https://github.com/Kedarini/Self-hosted-CI-CD-platform.git /tmp/repo
-              cp -r /tmp/repo/.git /home/ubuntu/Self-hosted-CI-CD-platform/
-              rm -rf /tmp/repo
+            TARGET_DIR="/home/ubuntu/Self-hosted-CI-CD-platform"
+
+            # Check if .git exists, if not initialize or clone safely
+            if [ ! -d "$TARGET_DIR/.git" ]; then
+              # Preserve existing .env file created by Terraform
+              if [ -f "$TARGET_DIR/.env" ]; then
+                cp "$TARGET_DIR/.env" /tmp/.env.backup
+              fi
+
+              rm -rf "$TARGET_DIR"
+              git clone https://github.com/Kedarini/Self-hosted-CI-CD-platform.git "$TARGET_DIR"
+
+              if [ -f /tmp/.env.backup ]; then
+                mv /tmp/.env.backup "$TARGET_DIR/.env"
+              fi
             fi
 
-            cd /home/ubuntu/Self-hosted-CI-CD-platform
+            cd "$TARGET_DIR"
             git fetch origin main
             git reset --hard origin/main
 
+            # Log in to ECR and pull/run containers
             aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin ${{ secrets.ECR_REPOSITORY_URL }}
 
             docker compose -f docker-compose.prod.yml pull app
