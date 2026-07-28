@@ -1,6 +1,6 @@
 services:
   app:
-    image: ${ECR_REGISTRY_URL}/url-shortener:latest
+    image: ${ECR_REGISTRY_URL}:latest
     restart: unless-stopped
     ports:
       - "8000:8000"
