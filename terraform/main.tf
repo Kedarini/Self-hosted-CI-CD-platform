@@ -152,15 +152,16 @@ resource "aws_instance" "app" {
 
   user_data = <<-EOF
     #!/bin/bash
+    set -e
     apt-get update -y
     apt-get install -y docker.io docker-compose-v2 awscli netcat-openbsd
     systemctl start docker
     systemctl enable docker
     usermod -aG docker ubuntu
 
+    # Generowanie pliku .env od razu dla instancji
     REPO_DIR="/home/ubuntu/Self-hosted-CI-CD-platform"
-    git clone https://github.com/Kedarini/Self-hosted-CI-CD-platform.git $REPO_DIR
-
+    mkdir -p $REPO_DIR
     cat <<EOT > $REPO_DIR/.env
 DATABASE_URL=postgresql://postgres:${var.db_password}@${aws_db_instance.main.address}:5432/urlshortener?sslmode=require
 GRAFANA_PASS=${var.db_password}
@@ -168,18 +169,6 @@ ECR_REGISTRY_URL=${aws_ecr_repository.app.repository_url}
 EOT
 
     chown -R ubuntu:ubuntu $REPO_DIR
-
-    echo "Waiting for launch of RDS..."
-    until nc -z -v -w5 ${aws_db_instance.main.address} 5432; do
-      echo "Database is not responding, waiting 10 seconds..."
-      sleep 10
-    done
-    echo "Database is ready!"
-
-    aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin ${aws_ecr_repository.app.repository_url}
-
-    cd $REPO_DIR
-    su - ubuntu -c "cd $REPO_DIR && docker compose -f docker-compose.prod.yml up --build -d"
   EOF
 
   tags = { Name = "url-shortener-app" }
