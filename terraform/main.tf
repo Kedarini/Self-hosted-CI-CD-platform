@@ -265,7 +265,7 @@ resource "aws_ecr_lifecycle_policy" "app_policy" {
 resource "aws_iam_role" "ec2_ecr_role" {
   name = "ec2_ecr_read_role"
 
-  assume_role_policy = jsondecode({
+  assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
