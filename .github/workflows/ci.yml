@@ -1,4 +1,4 @@
-name: CI
+name: CI/CD Pipeline
 
 permissions:
   contents: write
@@ -13,67 +13,47 @@ jobs:
   lint-and-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
 
       - name: Set up Python
-        uses: actions/setup-python@v7
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.14"
+          python-version: "3.12"
 
       - name: Install dependencies
         run: uv sync
 
-      - name: Lint with ruff (auto-fix)
-        run: uv run ruff check app tests --fix
-
-      - name: Commit lint fixes
-        run: |
-          if [ -n "$(git status --porcelain)" ]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add -A
-            git commit -m "Auto-fix linting issues [skip ci]"
-            git push
-          fi
+      - name: Lint with ruff (check only)
+        run: uv run ruff check app tests
 
       - name: Run tests
         env:
           DATABASE_URL: postgresql://placeholder:placeholder@localhost:5432/placeholder
         run: uv run pytest -v
 
-  build-image:
+  deploy:
     needs: lint-and-test
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
-      - uses: actions/checkout@v7
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-
-      - name: Build image
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          push: false
-          tags: url-shortener:latest
-
-  deploy:
-    needs: build-image
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    steps:
-      - name: Deploy to EC2
-        uses: appleboy/ssh-action@v1
+      - name: Deploy to EC2 via SSH
+        uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            cd Self-hosted-CI-CD-platform
-            git pull
-            docker compose -f docker-compose.prod.yml up --build -d
+            set -e
+            cd /home/ubuntu/Self-hosted-CI-CD-platform
+
+            git fetch origin main
+            git reset --hard origin/main
+
+            docker compose -f docker-compose.prod.yml up --build -d --remove-orphans
+
+            docker image prune -f
