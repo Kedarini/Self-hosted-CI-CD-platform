@@ -125,25 +125,25 @@ resource "aws_security_group" "db" {
 }
 
 # ------------------------------------------------------------------------------
-# EC2 INSTANCE & EIP
+# EC2 INSTANCE & EIP (USING PACKER AMI)
 # ------------------------------------------------------------------------------
 resource "aws_key_pair" "deployer" {
   key_name   = "url-shortener-key"
   public_key = file("~/.ssh/id_ed25519.pub")
 }
 
-data "aws_ami" "ubuntu" {
+data "aws_ami" "custom_ubuntu" {
   most_recent = true
-  owners      = ["099720109477"]
+  owners      = ["self"]
 
   filter {
     name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
+    values = ["custom-ubuntu-docker-*"]
   }
 }
 
 resource "aws_instance" "app" {
-  ami                    = data.aws_ami.ubuntu.id
+  ami                    = data.aws_ami.custom_ubuntu.id
   instance_type          = "t3.micro"
   subnet_id              = aws_subnet.public.id
   vpc_security_group_ids = [aws_security_group.app.id]
@@ -152,14 +152,6 @@ resource "aws_instance" "app" {
 
   user_data = <<-EOF
     #!/bin/bash
-    set -e
-    apt-get update -y
-    apt-get install -y docker.io docker-compose-v2 awscli netcat-openbsd
-    systemctl start docker
-    systemctl enable docker
-    usermod -aG docker ubuntu
-
-    # Generowanie pliku .env od razu dla instancji
     REPO_DIR="/home/ubuntu/Self-hosted-CI-CD-platform"
     mkdir -p $REPO_DIR
     cat <<EOT > $REPO_DIR/.env
@@ -167,7 +159,6 @@ DATABASE_URL=postgresql://postgres:${var.db_password}@${aws_db_instance.main.add
 GRAFANA_PASS=${var.db_password}
 ECR_REGISTRY_URL=${aws_ecr_repository.app.repository_url}
 EOT
-
     chown -R ubuntu:ubuntu $REPO_DIR
   EOF
 
