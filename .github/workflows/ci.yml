@@ -64,6 +64,10 @@ jobs:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
+      - name: Log in to Amazon ECR on GitHub runner
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
       - name: Deploy to EC2 via SSH
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -77,9 +81,8 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
 
-            aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin ${{ secrets.ECR_REPOSITORY_URL }}
+            echo "${{ steps.login-ecr.outputs.docker_password_123456789012_dkr_ecr_eu_central_1_amazonaws_com }}" | docker login --username AWS --password-stdin ${{ secrets.ECR_REPOSITORY_URL }}
 
             docker compose -f docker-compose.prod.yml pull app
             docker compose -f docker-compose.prod.yml up -d --remove-orphans
-
             docker image prune -f
