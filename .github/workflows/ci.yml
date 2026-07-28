@@ -84,15 +84,17 @@ jobs:
           script: |
             set -euo pipefail
 
-            if [ ! -d "/home/ubuntu/Self-hosted-CI-CD-platform" ]; then
-              git clone https://github.com/Kedarini/Self-hosted-CI-CD-platform.git /home/ubuntu/Self-hosted-CI-CD-platform
+            if [ ! -d "/home/ubuntu/Self-hosted-CI-CD-platform/.git" ]; then
+              git clone https://github.com/Kedarini/Self-hosted-CI-CD-platform.git /tmp/repo
+              cp -r /tmp/repo/.git /home/ubuntu/Self-hosted-CI-CD-platform/
+              rm -rf /tmp/repo
             fi
 
             cd /home/ubuntu/Self-hosted-CI-CD-platform
             git fetch origin main
             git reset --hard origin/main
 
-            echo "${{ steps.login-ecr.outputs.docker_password_123456789012_dkr_ecr_eu_central_1_amazonaws_com }}" | docker login --username AWS --password-stdin ${{ secrets.ECR_REPOSITORY_URL }}
+            aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin ${{ secrets.ECR_REPOSITORY_URL }}
 
             docker compose -f docker-compose.prod.yml pull app
             docker compose -f docker-compose.prod.yml up -d --remove-orphans
