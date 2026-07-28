@@ -83,6 +83,11 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             set -e
+
+            if [ ! -d "/home/ubuntu/Self-hosted-CI-CD-platform" ]; then
+              git clone https://github.com/Kedarini/Self-hosted-CI-CD-platform.git /home/ubuntu/Self-hosted-CI-CD-platform
+            fi
+
             cd /home/ubuntu/Self-hosted-CI-CD-platform
 
             git fetch origin main

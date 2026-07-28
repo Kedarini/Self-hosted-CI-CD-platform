@@ -153,7 +153,7 @@ resource "aws_instance" "app" {
   user_data = <<-EOF
     #!/bin/bash
     apt-get update -y
-    apt-get install -y docker.io docker-compose-v2 awscli
+    apt-get install -y docker.io docker-compose-v2 awscli netcat-openbsd
     systemctl start docker
     systemctl enable docker
     usermod -aG docker ubuntu
@@ -175,6 +175,8 @@ EOT
       sleep 10
     done
     echo "Database is ready!"
+
+    aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin ${aws_ecr_repository.app.repository_url}
 
     cd $REPO_DIR
     su - ubuntu -c "cd $REPO_DIR && docker compose -f docker-compose.prod.yml up --build -d"
@@ -247,9 +249,8 @@ resource "aws_ecr_lifecycle_policy" "app_policy" {
         description  = "Store only 3 latest images"
         selection = {
           tagStatus   = "any"
-          countType   = "sinceImagePushed"
-          countUnit   = "days"
-          countNumber = 14
+          countType   = "imageCountMoreThan"
+          countNumber = 3
         }
         action = {
           type = "expire"
