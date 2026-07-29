@@ -153,10 +153,10 @@ resource "aws_instance" "app" {
   user_data = <<-EOF
     #!/bin/bash
     REPO_DIR="/home/ubuntu/Self-hosted-CI-CD-platform"
-    mkdir -p $REPO_DIR
+    su - ubuntu -c "git clone https://github.com/Kedarini/Self-hosted-CI-CD-platform.git $REPO_DIR"
     cat <<EOT > $REPO_DIR/.env
 DATABASE_URL=postgresql://postgres:${var.db_password}@${aws_db_instance.main.address}:5432/urlshortener?sslmode=require
-GRAFANA_PASS=${var.db_password}
+GRAFANA_PASS=${var.grafana_password}
 ECR_REGISTRY_URL=${aws_ecr_repository.app.repository_url}
 EOT
     chown -R ubuntu:ubuntu $REPO_DIR
