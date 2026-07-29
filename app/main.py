@@ -1,7 +1,7 @@
 import random
 import string
-
 from contextlib import asynccontextmanager
+
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.responses import RedirectResponse
 from prometheus_fastapi_instrumentator import Instrumentator
