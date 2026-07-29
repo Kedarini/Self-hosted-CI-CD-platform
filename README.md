@@ -127,7 +127,7 @@ Grafana visualizes it. Example queries used in the dashboard:
 - P95 latency: `histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))`
 
 ## Project structure
-.
+.       
 ├── .github/workflows/ci.yml # CI/CD pipeline       
 ├── app/        
 │ ├── main.py # FastAPI endpoints       
