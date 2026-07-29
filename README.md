@@ -133,8 +133,8 @@ Grafana visualizes it. Example queries used in the dashboard:
 │ ├── main.py # FastAPI endpoints       
 │ ├── models.py # SQLAlchemy models     
 │ ├── schemas.py # Pydantic schemas     
-│ └── database.py # DB connection/session 
-├── grafana
+│ └── database.py # DB connection/session       
+├── grafana     
 │ ├── dashboards/url-shortner.json      
 │ └── provisioning      
 │   ├── dashboards/dashboard.yml        
