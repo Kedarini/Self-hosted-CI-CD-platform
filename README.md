@@ -128,24 +128,29 @@ Grafana visualizes it. Example queries used in the dashboard:
 
 ## Project structure
 .
-├── .github/workflows/ci.yml # CI/CD pipeline
-├── app/
-│ ├── main.py # FastAPI endpoints
-│ ├── models.py # SQLAlchemy models
-│ ├── schemas.py # Pydantic schemas
-│ └── database.py # DB connection/session
-├── tests/test_main.py # pytest suite
-├── terraform/ # AWS infrastructure as code
-│ ├── main.tf
-│ ├── variables.tf
-│ └── outputs.tf
-├── packer/ # (WIP) custom AMI build
-│ └── ubuntu-docker.pkr.hcl
-├── Dockerfile # multi-stage build (uv + FastAPI)
-├── docker-compose.yml # local dev (app + db + monitoring)
-├── docker-compose.prod.yml # production (app only, RDS external)
-├── prometheus.yml # Prometheus scrape config
-└── pyproject.toml / uv.lock
+├── .github/workflows/ci.yml # CI/CD pipeline       
+├── app/        
+│ ├── main.py # FastAPI endpoints       
+│ ├── models.py # SQLAlchemy models     
+│ ├── schemas.py # Pydantic schemas     
+│ └── database.py # DB connection/session 
+├── grafana
+│ ├── dashboards/url-shortner.json      
+│ └── provisioning      
+│   ├── dashboards/dashboard.yml        
+│   └── datasources/prometheus.yml      
+├── tests/test_main.py # pytest suite       
+├── terraform/ # AWS infrastructure as code     
+│ ├── main.tf       
+│ ├── variables.tf      
+│ └── outputs.tf        
+├── packer/ # (WIP) custom AMI build        
+│ └── ubuntu-docker.pkr.hcl     
+├── Dockerfile # multi-stage build (uv + FastAPI)       
+├── docker-compose.yml # local dev (app + db + monitoring)      
+├── docker-compose.prod.yml # production (app only, RDS external)       
+├── prometheus.yml # Prometheus scrape config       
+└── pyproject.toml / uv.lock        
 
 ## Possible improvements
 
