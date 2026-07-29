@@ -153,6 +153,6 @@ Grafana visualizes it. Example queries used in the dashboard:
 - [x] Migrate `@app.on_event("startup")` to FastAPI's `lifespan` handler
 - [ ] Move secrets to AWS Secrets Manager instead of `user_data`/`.env`
 - [ ] Add Kubernetes manifests as an alternative deployment target
-- [x] Custom Grafana dashboard provisioned as code (currently manual)
-- [ ] Pre-built AMI via Packer (in progress, see `packer/`) to speed up
+- [x] Custom Grafana dashboard provisioned as code
+- [x] Pre-built AMI via Packer (in progress, see `packer/`) to speed up
       instance startup instead of installing Docker via `user_data`
