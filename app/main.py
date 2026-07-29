@@ -1,6 +1,7 @@
 import random
 import string
 
+from contextlib import asynccontextmanager
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.responses import RedirectResponse
 from prometheus_fastapi_instrumentator import Instrumentator
@@ -11,19 +12,21 @@ from sqlalchemy.orm import Session
 from app import models, schemas
 from app.database import Base, engine, get_db
 
-app = FastAPI(title="URL Shortener")
-
-Instrumentator().instrument(app).expose(app)
-
 
 def generate_short_code(length: int = 6) -> str:
     chars = string.ascii_letters + string.digits
     return "".join(random.choices(chars, k=length))
 
 
-@app.on_event("startup")
-def on_startup():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
+    yield
+
+
+app = FastAPI(title="URL Shortener", lifespan=lifespan)
+
+Instrumentator().instrument(app).expose(app)
 
 
 @app.post("/shorten", response_model=schemas.URLResponse, status_code=201)
