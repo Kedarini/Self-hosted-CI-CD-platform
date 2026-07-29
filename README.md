@@ -7,29 +7,29 @@ infrastructure via Terraform and redeploys automatically on every push.
 
 ## Architecture
 
-GitHub push
-        │
-        ▼
-GitHub Actions CI
-├── lint (ruff, auto-fix + commit)
-├── test (pytest, isolated SQLite)
-└── build (Docker image)
-        │
-        ▼
-Deploy (SSH to EC2) ──► docker compose up --build
-        │
-        ▼
-┌─────────────────────────────────────┐
-│ AWS (Terraform-managed)             │
-│ ┌───────────┐      ┌─────────────┐  │
-│ │ EC2 (app) │◄────►│ RDS Postgres│  │ 
-│ │ + Elastic │      └─────────────┘  │
-│ │ IP        │                       │
-│ └─────┬─────┘                       │
-└───────┼─────────────────────────────┘
-        ▼
-Prometheus ──► Grafana
-
+GitHub push     
+        │       
+        ▼       
+GitHub Actions CI       
+├── lint (ruff, auto-fix + commit)      
+├── test (pytest, isolated SQLite)      
+└── build (Docker image)        
+        │       
+        ▼       
+Deploy (SSH to EC2) ──► docker compose up --build       
+        │       
+        ▼       
+┌─────────────────────────────────────┐     
+│ AWS (Terraform-managed)             │     
+│ ┌───────────┐      ┌─────────────┐  │     
+│ │ EC2 (app) │◄────►│ RDS Postgres│  │         
+│ │ + Elastic │      └─────────────┘  │     
+│ │ IP        │                       │     
+│ └─────┬─────┘                       │     
+└───────┼─────────────────────────────┘     
+        ▼       
+Prometheus ──► Grafana      
+        
 ## Tech stack
 
 - **API**: FastAPI + SQLAlchemy + Pydantic
@@ -41,13 +41,13 @@ Prometheus ──► Grafana
 
 ## API endpoints
 
-| Method | Path                   | Description                          |
-|--------|------------------------|---------------------------------------|
-| POST   | `/shorten`              | Create a shortened link               |
-| GET    | `/{short_code}`         | Redirect to the target URL            |
-| GET    | `/stats/{short_code}`   | View click statistics                  |
-| GET    | `/health`               | Health check (DB connectivity)         |
-| GET    | `/metrics`              | Prometheus metrics                     |
+| Method | Path                   | Description                           |     
+|--------|------------------------|---------------------------------------|     
+| POST   | `/shorten`             | Create a shortened link               |     
+| GET    | `/{short_code}`        | Redirect to the target URL            |     
+| GET    | `/stats/{short_code}`  | View click statistics                 |     
+| GET    | `/health`              | Health check (DB connectivity)        |     
+| GET    | `/metrics`             | Prometheus metrics                    |     
 
 ## Getting started (local development)
 
