@@ -154,7 +154,7 @@ Grafana visualizes it. Example queries used in the dashboard:
 
 ## Possible improvements
 
-- [ ] Replace SSH-based deploy with AWS Systems Manager Session Manager
+- [x] Replace SSH-based deploy with AWS Systems Manager Session Manager
 - [x] Migrate `@app.on_event("startup")` to FastAPI's `lifespan` handler
 - [x] Move secrets to AWS Secrets Manager instead of `user_data`/`.env`
 - [ ] Add Kubernetes manifests as an alternative deployment target
