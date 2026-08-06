@@ -84,12 +84,12 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
 
-            cat <<EOF > .env
-            DATABASE_URL=${{ secrets.DATABASE_URL }}
-            GRAFANA_PASS=${{ secrets.GRAFANA_PASSWORD }}
-            ECR_REGISTRY_URL=${{ secrets.ECR_REPOSITORY_URL }}
-            EOF
+            DB_PASSWORD=$(aws secretsmanager get-secret-value --secret-id url-shortener/db-password --query SecretString --output text --region eu-central-1)
+            GRAFANA_PASS_VALUE=$(aws secretsmanager get-secret-value --secret-id url-shortener/grafana-password --query SecretString --output text --region eu-central-1)
+            RDS_ENDPOINT=$(aws rds describe-db-instances --db-instance-identifier url-shortener-db --query "DBInstances[0].Endpoint.Address" --output text --region eu-central-1)
 
+            export DATABASE_URL="postgresql://postgres:${DB_PASSWORD}@${RDS_ENDPOINT}:5432/urlshortener?sslmode=require"
+            export GRAFANA_PASS="${GRAFANA_PASS_VALUE}"
             export ECR_REGISTRY_URL="${{ secrets.ECR_REPOSITORY_URL }}"
 
             aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin "${{ secrets.ECR_REPOSITORY_URL }}"
