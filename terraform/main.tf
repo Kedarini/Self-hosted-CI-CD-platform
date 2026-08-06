@@ -76,14 +76,6 @@ resource "aws_security_group" "app" {
   vpc_id      = aws_vpc.main.id
 
   ingress {
-    description = "SSH"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] # if variable is set to some ip's it will not work with github actions
-  }
-
-  ingress {
     description = "App port"
     from_port   = 8000
     to_port     = 8000
@@ -258,6 +250,11 @@ resource "aws_iam_role" "ec2_ecr_role" {
 resource "aws_iam_role_policy_attachment" "ec2_ecr_policy" {
   role       = aws_iam_role.ec2_ecr_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+}
+
+resource "aws_iam_role_policy_attachment" "ec2_ssm_policy" {
+  role       = aws_iam_role.ec2_ecr_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }
 
 resource "aws_iam_role_policy" "ec2_secrets_policy" {
