@@ -154,11 +154,6 @@ resource "aws_instance" "app" {
     #!/bin/bash
     REPO_DIR="/home/ubuntu/Self-hosted-CI-CD-platform"
     su - ubuntu -c "git clone https://github.com/Kedarini/Self-hosted-CI-CD-platform.git $REPO_DIR"
-    cat <<EOT > $REPO_DIR/.env
-DATABASE_URL=postgresql://postgres:${var.db_password}@${aws_db_instance.main.address}:5432/urlshortener?sslmode=require
-GRAFANA_PASS=${var.grafana_password}
-ECR_REGISTRY_URL=${aws_ecr_repository.app.repository_url}
-EOT
     chown -R ubuntu:ubuntu $REPO_DIR
   EOF
 
@@ -265,7 +260,65 @@ resource "aws_iam_role_policy_attachment" "ec2_ecr_policy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
 
+resource "aws_iam_role_policy" "ec2_secrets_policy" {
+  name = "ec2_secrets_read_policy"
+  role = aws_iam_role.ec2_ecr_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = ["secretsmanager:GetSecretValue"]
+        Resource = [
+          aws_secretsmanager_secret.db_password.arn,
+          aws_secretsmanager_secret.grafana_password.arn
+        ]
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "ec2_rds_describe_policy" {
+  name = "ec2_rds_describe_policy"
+  role = aws_iam_role.ec2_ecr_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["rds:DescribeDBInstances"]
+        Resource = [aws_db_instance.main.arn]
+      }
+    ]
+  })
+}
+
 resource "aws_iam_instance_profile" "ec2_ecr_profile" {
   name = "ec2_ecr_profile"
   role = aws_iam_role.ec2_ecr_role.name
+}
+
+# ------------------------------------------------------------------------------
+# Secrets Manager
+# ------------------------------------------------------------------------------
+
+resource "aws_secretsmanager_secret" "db_password" {
+  name = "url-shortener/db-password"
+}
+
+resource "aws_secretsmanager_secret_version" "db_password" {
+  secret_id     = aws_secretsmanager_secret.db_password.id
+  secret_string = var.db_password
+}
+
+resource "aws_secretsmanager_secret" "grafana_password" {
+  name = "url-shortener/grafana-password"
+}
+
+
+resource "aws_secretsmanager_secret_version" "grafana_password" {
+  secret_id     = aws_secretsmanager_secret.grafana_password.id
+  secret_string = var.grafana_password
 }
