@@ -46,7 +46,11 @@ build {
       "sudo apt-get install -y docker.io docker-compose-v2 awscli netcat-openbsd",
 
       "sudo systemctl enable docker",
-      "sudo usermod -aG docker ubuntu"
+      "sudo usermod -aG docker ubuntu",
+
+      "sudo snap install amazon-ssm-agent --classic",
+      "sudo systemctl enable snap.amazon-ssm-agent.amazon-ssm-agent.service",
+      "sudo systemctl start snap.amazon-ssm-agent.amazon-ssm-agent.service"
     ]
   }
 }
