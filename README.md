@@ -143,7 +143,13 @@ Grafana visualizes it. Example queries used in the dashboard:
 ├── terraform/ # AWS infrastructure as code     
 │ ├── main.tf       
 │ ├── variables.tf      
-│ └── outputs.tf        
+│ └── outputs.tf     
+├── k8s        
+│ ├── app-deployment.yaml                
+│ ├── app-service.yaml          
+│ ├── configmap.yaml            
+│ ├── postgres-deployment.yaml          
+│ └── secret.yaml       
 ├── packer/ # (WIP) custom AMI build        
 │ └── ubuntu-docker.pkr.hcl     
 ├── Dockerfile # multi-stage build (uv + FastAPI)       
