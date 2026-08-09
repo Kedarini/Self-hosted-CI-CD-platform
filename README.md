@@ -225,11 +225,3 @@ Example queries used in the dashboard:
 ├── prometheus.yml                    # Prometheus scrape config
 └── pyproject.toml / uv.lock
 ```
-
-## Possible improvements
-
-- [ ] Automate ECR `imagePullSecret` refresh in Kubernetes (token expires after 12h)
-- [ ] Add Terraform module for EKS as a managed alternative to minikube
-- [ ] Restrict app security group's port 8000 behind a load balancer / CDN
-- [ ] Add Horizontal Pod Autoscaler for the K8s deployment
-- [ ] Remote Terraform state (S3 + DynamoDB lock) instead of local state
