@@ -224,6 +224,7 @@ Example queries used in the dashboard:
 ├── docker-compose.prod.yml           # production (app only, RDS/ECR external)
 ├── prometheus.yml                    # Prometheus scrape config
 └── pyproject.toml / uv.lock
+```
 
 This project was intentionally designed and built to run within the [AWS Free Tier](https://aws.amazon.com/free/). Instead of reaching for managed, pay-per-use services, I opted for leaner alternatives to achieve the same end-to-end CI/CD, deployment and monitoring flow. 
 
@@ -262,5 +263,3 @@ Notes:
 - Double check your AWS region and usage against the AWS Free Tier page as offers can change over time.
 - Ensure resources such as EBS volumes, Elastic IPs (if left attached) and ECR images are accounted for before leaving them running.
 - Avoid leaving the instance running for prolonged periods outside of your testing window, as EC2 hours are the most common thing to track (750h/month limit).
-
-```
