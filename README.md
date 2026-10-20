@@ -224,4 +224,43 @@ Example queries used in the dashboard:
 ├── docker-compose.prod.yml           # production (app only, RDS/ECR external)
 ├── prometheus.yml                    # Prometheus scrape config
 └── pyproject.toml / uv.lock
+
+This project was intentionally designed and built to run within the [AWS Free Tier](https://aws.amazon.com/free/). Instead of reaching for managed, pay-per-use services, I opted for leaner alternatives to achieve the same end-to-end CI/CD, deployment and monitoring flow. 
+
+### Free-Tier conscious choices: 
+
+| Component | Choice | Reason |
+| :-- | :-- | :-- |
+| Compute | `t2.micro` / `t3.micro` EC2 | Stays within the 750 hours/month Free Tier limit. |   
+| Access & Deployment | AWS Systems Manager (SSM) | Replaced SSH and a Bastion host. No open port 22 and no need for an extra instance. |   
+| Networking | No NAT Gateway, No ALB | Avoided two of the most common sources of unexpected costs on AWS. |
+| Monitoring | Prometheus + Grafana on the same EC2 instance | Instead of using managed observability services, both run on a single instance. |    
+| Container Registry | Amazon ECR | Used within Free Tier storage limits for the scope of this project. |   
+| Kubernetes | Local manifests (kind/minikube) | EKS was intentionally skipped due to its control plane costs. Manifests are still provided to showcase K8s knowledge. |   
+| Image Baking | Custom Packer AMI | Reduces setup time on boot, making better use of the limited Free Tier hours and creating reproducible builds. |   
+
+## Trade-offs & Design Decisions
+
+Since the goal was to stay within the AWS Free Tier, some production-grade conveniences had to be sacrificed in favor of cost-efficiency. 
+
+| Decision | Alternative Considered | Trade-off | Justification |
+| :-- | :-- | :-- | :-- |
+| Run the app, Prometheus and Grafana on a single EC2 instance | Separate instances per service | Less isolation and more resource contention (CPU/RAM). | Drastically reduces resource count whilst still being able to monitor the application. |
+| Use AWS SSM for deployments instead of SSH | Bastion Host + SSH | Less familiar to some workflows, requires correct IAM permissions and SSM Agent. | Far cheaper, more secure (no public SSH) and fits Free Tier perfectly. |
+| Avoid NAT Gateway and ALB | NAT Gateway for private subnets & Application Load Balancer for traffic | More restrictive networking design and no managed L7 load balancing. | Prevents hourly + data processing fees, which would be the easiest way to exceed Free Tier. |
+| Provide Kubernetes manifests, don't deploy to EKS | Deploy to Amazon EKS | No cloud hosted Kubernetes cluster to demo against. | EKS incurs costs even for small tests, so local clusters were used to demonstrate the manifests and understanding regardless. |
+| Bake a custom AMI with Packer | Provision everything with User Data on every boot | Less "dynamic" and requires rebuilding the AMI if base dependencies change. | Faster boots, more reproducible and reduces time spent on provisioning. |
+
+## Cost Awareness & Cleanup
+
+This environment was built for learning and demonstration purposes. If you recreate it, always tear it down after testing to avoid unintended charges. 
+
+```bash
+# Destroy all provisioned infrastructure
+terraform destroy
+Notes:
+- Double check your AWS region and usage against the AWS Free Tier page as offers can change over time.
+- Ensure resources such as EBS volumes, Elastic IPs (if left attached) and ECR images are accounted for before leaving them running.
+- Avoid leaving the instance running for prolonged periods outside of your testing window, as EC2 hours are the most common thing to track (750h/month limit).
+
 ```
