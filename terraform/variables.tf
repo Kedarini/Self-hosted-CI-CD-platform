@@ -22,12 +22,6 @@ variable "grafana_password" {
   default     = "admin"
 }
 
-variable "allowed_ssh_cidr" {
-  description = "CIDR block allowed to SSH into the app instance (kept for compatibility)"
-  type        = string
-  default     = "0.0.0.0/0"
-}
-
 variable "ec2_ami_id" {
   description = "AMI/container image identifier used for the emulated EC2 instance in Floci"
   type        = string
