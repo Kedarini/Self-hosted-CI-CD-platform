@@ -14,8 +14,7 @@ env:
   AWS_SECRET_ACCESS_KEY: test
   AWS_DEFAULT_REGION: us-east-1
   AWS_ENDPOINT_URL: http://localhost:4566
-  ECR_REGISTRY: localhost:4566
-  ECR_REPOSITORY: url-shortener
+  AWS_EC2_METADATA_DISABLED: "true"
 
 jobs:
   lint-and-test:
@@ -42,7 +41,7 @@ jobs:
           DATABASE_URL: postgresql://placeholder:placeholder@localhost:5432/placeholder
         run: uv run pytest -v
 
-  build-and-push:
+  build-and-deploy:
     needs: lint-and-test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
@@ -51,64 +50,57 @@ jobs:
         image: floci/floci:latest
         ports:
           - 4566:4566
-        options: >-
-          --health-cmd "curl -fsS http://localhost:4566/_floci/health || exit 1"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 20
     steps:
       - uses: actions/checkout@v4
 
       - name: Wait for Floci
         run: |
-          for i in {1..30}; do
-            if curl -fsS http://localhost:4566/_floci/health >/dev/null; then exit 0; fi
+          for i in {1..60}; do
+            if curl -fsS http://localhost:4566/ >/dev/null 2>&1 || curl -fsS http://localhost:4566/_floci/health >/dev/null 2>&1; then
+              echo "Floci is ready"
+              exit 0
+            fi
             sleep 2
           done
-          echo "Floci not ready" && exit 1
+          echo "Floci did not become ready in time" >&2
+          exit 1
 
-      - name: Create local ECR repository (Floci)
+      - name: Prepare local AWS resources in Floci
         run: |
           aws --endpoint-url "$AWS_ENDPOINT_URL" ecr create-repository \
-            --repository-name "$ECR_REPOSITORY" --region "$AWS_DEFAULT_REGION" || true
+            --repository-name url-shortener --region "$AWS_DEFAULT_REGION" >/dev/null 2>&1 || true
+          aws --endpoint-url "$AWS_ENDPOINT_URL" secretsmanager create-secret \
+            --name url-shortener/db-password --secret-string "PASSWORD" --region "$AWS_DEFAULT_REGION" >/dev/null 2>&1 || true
+          aws --endpoint-url "$AWS_ENDPOINT_URL" secretsmanager create-secret \
+            --name url-shortener/grafana-password --secret-string "admin" --region "$AWS_DEFAULT_REGION" >/dev/null 2>&1 || true
 
-      - name: Build and push image to Floci ECR
+      - name: Build application image
+        run: docker build -t url-shortener:local .
+
+      - name: Deploy stack (local, Floci-backed)
         run: |
-          docker build -t "$ECR_REGISTRY/$ECR_REPOSITORY:latest" .
-          # Floci provides an OCI-compatible registry; push validates local ECR flow
-          docker push "$ECR_REGISTRY/$ECR_REPOSITORY:latest" || echo "Image built locally; push skipped if registry endpoint differs in this environment"
-
-  deploy:
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    services:
-      floci:
-        image: floci/floci:latest
-        ports:
-          - 4566:4566
-        options: >-
-          --health-cmd "curl -fsS http://localhost:4566/_floci/health || exit 1"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 20
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Wait for Floci
-        run: |
+          # Start only app dependencies and app; Floci is provided as a CI service
+          docker compose up -d db
+          # Wait for DB health
           for i in {1..30}; do
-            if curl -fsS http://localhost:4566/_floci/health >/dev/null; then exit 0; fi
+            if docker compose exec -T db pg_isready -U username -d default_database >/dev/null 2>&1; then
+              break
+            fi
             sleep 2
           done
-          echo "Floci not ready" && exit 1
+          docker compose up -d --build app
+          docker compose ps
 
-      - name: Deploy locally via Docker Compose (Floci-backed)
-        env:
-          ECR_REGISTRY_URL: local/url-shortener
-          DATABASE_URL: postgresql://username:PASSWORD@db:5432/default_database
-          GRAFANA_PASS: admin
+      - name: Smoke check
         run: |
-          docker compose -f docker-compose.yml up -d --build app db
-          docker compose -f docker-compose.yml ps
-          echo "Local Floci-backed deployment started (CI environment)"
+          for i in {1..30}; do
+            if curl -fsS http://localhost:8000/health >/dev/null 2>&1; then
+              echo "App is healthy"
+              curl -fsS http://localhost:8000/health || true
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "App health check failed" >&2
+          docker compose logs --no-color --tail=200 app db || true
+          exit 1
