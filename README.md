@@ -1,11 +1,15 @@
-# URL Shortener — Self-Hosted CI/CD Platform
+# URL Shortener — Self-Hosted CI/CD Platform (Floci / local AWS)
 
-A production-style URL shortener built to demonstrate a complete DevOps
-workflow: containerized app → automated testing → CI/CD → infrastructure
-as code → monitoring → container orchestration. Not just a toy project —
-this ships to real AWS infrastructure via Terraform and redeploys
-automatically on every push, with zero secrets ever touching disk or
-version control.
+A production-style URL shortener demonstrating a complete DevOps workflow:
+containerized app → automated testing → CI/CD → infrastructure as code →
+monitoring → container orchestration. This version is adapted to run **only
+against [Floci](https://github.com/floci-io/floci)** (local AWS emulator)
+instead of real AWS, while keeping the overall architecture and components
+the same.
+
+> Local mode: AWS-facing tools (Terraform, AWS CLI, CI jobs) use Floci at
+> `http://localhost:4566` with test credentials (`test`/`test`) and do not
+> rely on real AWS accounts, GitHub OIDC federation, or long-lived cloud keys.
 
 ## Architecture
 
@@ -93,18 +97,15 @@ Tests run against an in-memory SQLite database, so no live Postgres
 connection is required — the `DATABASE_URL` above only satisfies the
 app's config on import.
 
-## CI/CD pipeline
+## CI/CD pipeline (Floci)
 
 Every push to `main` triggers three jobs in sequence:
 
 1. **lint-and-test** — `ruff` checks style, then runs the pytest suite
-2. **build-and-push** — builds the Docker image and pushes it to Amazon ECR
-3. **deploy** — sends a command to the EC2 instance via **AWS Systems
-   Manager** (no SSH, no open port 22): it pulls the latest code, fetches
-   the DB password and Grafana password from **Secrets Manager** and the
-   RDS endpoint via the AWS API at runtime, logs into ECR, and redeploys
-   with `docker compose -f docker-compose.prod.yml up -d`. No secret is
-   ever written to disk.
+2. **build-and-push** — starts Floci, creates a local ECR repository, builds the Docker image and attempts a push to the Floci-backed registry
+3. **deploy** — starts Floci and performs a local deployment using Docker Compose (Floci-backed environment)
+
+Authentication in CI uses local test credentials and `AWS_ENDPOINT_URL=http://localhost:4566` (no GitHub OIDC and no real AWS secrets). For end-to-end local runs outside GitHub Actions, you can use `docker compose up` with the included `floci` service.
 
 ## Infrastructure (Terraform)
 
