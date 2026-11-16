@@ -1,15 +1,4 @@
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
-    }
-  }
-}
 
-provider "aws" {
-  region = "eu-central-1"
-}
 
 # ------------------------------------------------------------------------------
 # VPC & NETWORK
@@ -25,7 +14,7 @@ resource "aws_vpc" "main" {
 resource "aws_subnet" "public" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = "10.0.1.0/24"
-  availability_zone       = "eu-central-1a"
+  availability_zone       = local.availability_zones[0]
   map_public_ip_on_launch = true
 
   tags = { Name = "url-shortener-public-subnet-1" }
@@ -34,7 +23,7 @@ resource "aws_subnet" "public" {
 resource "aws_subnet" "public_2" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = "10.0.2.0/24"
-  availability_zone       = "eu-central-1b"
+  availability_zone       = local.availability_zones[1]
   map_public_ip_on_launch = true
 
   tags = { Name = "url-shortener-public-subnet-2" }
@@ -120,22 +109,13 @@ resource "aws_security_group" "db" {
 # EC2 INSTANCE & EIP (USING PACKER AMI)
 # ------------------------------------------------------------------------------
 resource "aws_key_pair" "deployer" {
-  key_name   = "url-shortener-key"
-  public_key = file("~/.ssh/id_ed25519.pub")
-}
-
-data "aws_ami" "custom_ubuntu" {
-  most_recent = true
-  owners      = ["self"]
-
-  filter {
-    name   = "name"
-    values = ["custom-ubuntu-docker-*"]
-  }
+  key_name = "url-shortener-key"
+  # Local/Floci-friendly placeholder key material for emulated EC2
+  public_key = var.ec2_public_key
 }
 
 resource "aws_instance" "app" {
-  ami                    = data.aws_ami.custom_ubuntu.id
+  ami                    = var.ec2_ami_id
   instance_type          = "t3.micro"
   subnet_id              = aws_subnet.public.id
   vpc_security_group_ids = [aws_security_group.app.id]
@@ -144,9 +124,7 @@ resource "aws_instance" "app" {
 
   user_data = <<-EOF
     #!/bin/bash
-    REPO_DIR="/home/ubuntu/Self-hosted-CI-CD-platform"
-    su - ubuntu -c "git clone https://github.com/Kedarini/Self-hosted-CI-CD-platform.git $REPO_DIR"
-    chown -R ubuntu:ubuntu $REPO_DIR
+    echo "Floci local instance bootstrap"
   EOF
 
   tags = { Name = "url-shortener-app" }
@@ -247,14 +225,61 @@ resource "aws_iam_role" "ec2_ecr_role" {
   })
 }
 
-resource "aws_iam_role_policy_attachment" "ec2_ecr_policy" {
-  role       = aws_iam_role.ec2_ecr_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+resource "aws_iam_role_policy" "ec2_ecr_read_policy" {
+  name = "ec2-ecr-read"
+  role = aws_iam_role.ec2_ecr_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["ecr:GetAuthorizationToken"]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage"
+        ]
+        Resource = aws_ecr_repository.app.arn
+      }
+    ]
+  })
 }
 
-resource "aws_iam_role_policy_attachment" "ec2_ssm_policy" {
-  role       = aws_iam_role.ec2_ecr_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+resource "aws_iam_role_policy" "ec2_ssm_core_policy" {
+  name = "ec2-ssm-core"
+  role = aws_iam_role.ec2_ecr_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ssm:DescribeAssociation",
+          "ssm:GetDeployablePatchSnapshotForInstance",
+          "ssm:GetDocument",
+          "ssm:DescribeDocument",
+          "ssm:GetManifest",
+          "ssm:ListAssociations",
+          "ssm:ListInstanceAssociations",
+          "ssm:PutInventory",
+          "ssm:PutComplianceItems",
+          "ssm:PutConfigurePackageResult",
+          "ssm:UpdateAssociationStatus",
+          "ssm:UpdateInstanceAssociationStatus",
+          "ssm:UpdateInstanceInformation",
+          "ssmmessages:*",
+          "ec2messages:*"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
 }
 
 resource "aws_iam_role_policy" "ec2_secrets_policy" {
